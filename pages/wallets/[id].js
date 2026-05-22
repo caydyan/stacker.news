@@ -1,48 +1,32 @@
 import { getGetServerSideProps } from '@/api/ssrApollo'
-import {
-  WalletErrorShell,
-  WalletLoadingShell,
-  WalletRouteGateShell,
-  WalletMultiStepForm
-} from '@/wallets/client/components'
-import { useTemplates, useWallets } from '@/wallets/client/hooks'
-import { unurlify } from '@/wallets/lib/util'
-import { useMemo } from 'react'
+import { WalletErrorShell, WalletLoadingShell, WalletRoutePage } from '@/wallets/client/components'
+import { WalletHome } from '@/wallets/client/components/home'
+import { useRouteWallet } from '@/wallets/client/hooks'
 import { useRouter } from 'next/router'
 
 export const getServerSideProps = getGetServerSideProps({ authRequired: true })
 
-export default function Wallet () {
+export default function WalletSelectedPage () {
   const router = useRouter()
-  const wallets = useWallets()
-  const templates = useTemplates()
-  const routeType = Array.isArray(router.query.type) ? router.query.type[0] : router.query.type
-  const wallet = useMemo(() => {
-    if (!routeType) return null
+  const { wallet, ready, routeId } = useRouteWallet()
+  const id = Number(routeId)
 
-    const id = Number(routeType)
-    if (!Number.isNaN(id)) {
-      return wallets.find(wallet => Number(wallet.id) === id) ?? null
-    }
+  if (!router.isReady) {
+    return <WalletLoadingShell />
+  }
 
-    const templateName = unurlify(routeType)
-    return templates.find(template => template.name === templateName) ?? null
-  }, [routeType, wallets, templates])
+  if (!Number.isSafeInteger(id)) {
+    return (
+      <WalletErrorShell
+        title='wallet not found'
+        message='this wallet route could not be found'
+      />
+    )
+  }
 
   return (
-    <WalletRouteGateShell>
-      {!router.isReady
-        ? (
-          <WalletLoadingShell />
-          )
-        : !wallet
-            ? (
-              <WalletErrorShell
-                title='wallet not found'
-                message='this wallet could not be found'
-              />
-              )
-            : <WalletMultiStepForm key={routeType} wallet={wallet} />}
-    </WalletRouteGateShell>
+    <WalletRoutePage ready={ready} resource={wallet}>
+      {() => <WalletHome routeWalletId={routeId} />}
+    </WalletRoutePage>
   )
 }

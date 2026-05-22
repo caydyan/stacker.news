@@ -1,0 +1,477 @@
+/* Wallet home */
+
+@keyframes walletBalancePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+
+.walletSidebar {
+  position: sticky;
+  top: 5rem;
+  align-self: start;
+  max-height: calc(100svh - 5rem);
+  margin-left: -0.75rem;
+  padding: 1.75rem 0.75rem;
+  overflow-y: auto;
+}
+.orderDragIcon {
+  width: 16px;
+  height: 16px;
+  align-self: start;
+  margin-top: 0.35rem;
+}
+.walletRowIdentityMeta {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+.templateRow:focus-visible {
+  border-color: var(--bs-primary);
+  box-shadow: inset 0 0 0 1px var(--bs-primary);
+  color: var(--bs-body-color);
+  outline: 0;
+}
+.selectedRing {
+  border-color: var(--bs-primary);
+  box-shadow: inset 0 0 0 1px var(--bs-primary);
+}
+.orderHint {
+  margin: -0.35rem 0 0;
+  color: var(--theme-grey);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+.sidebarTitle {
+  font-size: 1.6rem;
+  margin: 0;
+}
+.walletList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: visible;
+}
+.walletSectionLabel {
+  margin: 0.45rem 0.25rem -0.25rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+.walletSectionLabel:first-child {
+  margin-top: 0;
+}
+.walletRow,
+.mobileWalletSelector,
+.mobileWalletRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+.mobileWalletSelector,
+.mobileWalletRow {
+  --surface-row-min-height: 72px;
+  gap: 0.8rem;
+}
+.mobileWalletSelector {
+  box-shadow: none;
+}
+.mobileWalletSelector:hover {
+  color: var(--bs-body-color);
+}
+.externalWalletRow {
+  align-items: flex-start;
+}
+.orderingWalletRow.externalWalletRow,
+.mobileWalletRow.orderingWalletRow.externalWalletRow {
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
+  cursor: grab;
+}
+.orderingWalletRow.externalWalletRow:active {
+  cursor: grabbing;
+}
+.addWalletRow,
+.mobileWalletRow.addWalletRow {
+  min-height: 64px;
+  grid-template-columns: 1fr;
+  place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--theme-grey) 65%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--bs-body-bg) 82%,
+    var(--theme-toolbarHover)
+  );
+}
+.addWalletRow:hover,
+.mobileWalletRow.addWalletRow:hover {
+  border-color: color-mix(in srgb, var(--bs-primary) 70%, var(--theme-grey));
+  background: color-mix(in srgb, var(--bs-primary) 7%, var(--bs-body-bg));
+  color: var(--bs-body-color);
+}
+.addWalletRow.selectedRing,
+.mobileWalletRow.addWalletRow.selectedRing {
+  border-color: var(--bs-primary);
+  border-style: dashed;
+  box-shadow: none;
+}
+.walletRowLogo,
+.walletRowFallback,
+.internalWalletIcon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  color: var(--bs-body-color);
+  fill: currentColor;
+}
+.internalWalletIcon path {
+  fill: currentColor;
+}
+.walletRowFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--theme-toolbarHover);
+  font-weight: 700;
+}
+.externalWalletRow .walletRowLogo,
+.selectedWalletIdentity .walletRowLogo,
+.selectedWalletIdentity .walletRowFallback,
+.selectedWalletIdentity .internalWalletIcon {
+  width: auto;
+  height: auto;
+  max-width: min(150px, 100%);
+  max-height: var(--wallet-logo-max-height, 28px);
+}
+.walletRowIdentity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+.walletRowLogoLine {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.walletRowIdentityName {
+  min-height: 20px;
+  color: var(--bs-body-color);
+}
+.walletRowBalance {
+  justify-self: end;
+  align-self: center;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  color: var(--theme-grey);
+  font-family: var(--bs-font-monospace);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-align: right;
+}
+.walletRowBalanceLoading,
+.bigBalanceLoading .bigBalanceAmount {
+  animation: walletBalancePulse 1.4s ease-in-out infinite;
+}
+.mobileWalletSelector .mobileWalletCaret,
+.mobileWalletRow.externalWalletRow .mobileWalletSelectedIcon {
+  grid-column: 3;
+  justify-self: end;
+  align-self: center;
+}
+.mobileWalletRow.orderingWalletRow.externalWalletRow .mobileWalletSelectedIcon {
+  grid-column: 4;
+}
+.mobileWalletCaret,
+.mobileWalletSelectedIcon {
+  color: var(--theme-grey);
+  flex-shrink: 0;
+}
+.mobileWalletSelector:hover .mobileWalletCaret,
+.selectedRing .mobileWalletSelectedIcon {
+  color: var(--bs-body-color);
+}
+.statusPill {
+  --status-line-color: color-mix(
+    in srgb,
+    var(--state-bg, currentColor) 88%,
+    #000
+  );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  height: 20px;
+  padding: 0 0.35rem;
+  border: 1px solid
+    var(--status-line-color, color-mix(in srgb, currentColor 88%, #000));
+  border-radius: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--state-color, var(--theme-grey));
+  background-color: var(--state-bg, var(--theme-toolbarHover));
+}
+.statusIcon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  flex-shrink: 0;
+  color: inherit !important;
+  fill: currentColor !important;
+}
+.statusDivider {
+  width: 1px;
+  align-self: stretch;
+  flex-shrink: 0;
+  background-color: var(
+    --status-line-color,
+    color-mix(in srgb, currentColor 88%, #000)
+  );
+}
+.statusLabel {
+  display: flex;
+  align-items: center;
+  height: 12px;
+  line-height: 12px;
+  transform: translateY(-0.5px);
+}
+.statusPill .statusIcon,
+.statusLabel {
+  color: inherit !important;
+}
+.statusPill .statusIcon,
+.statusPill .statusIcon path {
+  fill: currentColor !important;
+}
+.selectedWalletPanel {
+  min-height: 100%;
+  height: 100%;
+  padding: 2rem;
+  border: 1px solid rgba(var(--theme-color-rgb), 0.08);
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--theme-toolbarHover) 25%,
+    var(--bs-body-bg)
+  );
+  overflow: hidden;
+}
+.selectedWalletHeader {
+  width: 100%;
+}
+.selectedWalletIdentity {
+  min-width: 0;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+}
+.selectedWalletIdentity .walletRowLogo,
+.selectedWalletIdentity .walletRowFallback,
+.selectedWalletIdentity .internalWalletIcon {
+  --wallet-logo-max-height: 36px;
+}
+.bigBalance,
+.bigBalanceUnavailable {
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+  margin: auto 0;
+  padding: 4rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--bs-font-monospace);
+  line-height: 1;
+  text-align: center;
+}
+.bigBalanceAmount {
+  max-width: 100%;
+  font-size: min(
+    clamp(4rem, 10vw, 7.5rem),
+    calc(92cqw / (var(--balance-chars, 1) * 0.62))
+  );
+  line-height: 1;
+  white-space: nowrap;
+}
+.bigBalanceUnit,
+.bigBalanceUnavailableMessage,
+.bigBalanceErrorMessageSecondary {
+  margin-top: 0.75rem;
+  font-family: var(--bs-body-font-family);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.bigBalanceUnavailable,
+.bigBalanceUnit,
+.bigBalanceErrorMessageSecondary {
+  color: var(--theme-grey);
+}
+.bigBalanceUnavailableDash {
+  font-size: clamp(4rem, 10vw, 7.5rem);
+  line-height: 1;
+}
+.bigBalanceUnavailableMessage,
+.bigBalanceErrorMessageSecondary {
+  max-width: min(100%, 24rem);
+}
+.bigBalanceErrorMessageSecondary {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+.walletActions {
+  width: calc(100% + 4rem);
+  min-height: 170px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0;
+  align-self: stretch;
+  margin: auto -2rem -2rem;
+}
+.walletActionButton {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  font-weight: 700;
+}
+.walletActionsCompact {
+  min-height: auto;
+  justify-content: center;
+  padding: 1rem 0 1.25rem;
+}
+.addWalletPanel {
+  width: 100%;
+  padding: 1.25rem;
+  border: 0;
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--theme-toolbarHover) 25%,
+    var(--bs-body-bg)
+  );
+}
+.addWalletPanel .templateRow {
+  border: 0;
+  background: color-mix(
+    in srgb,
+    var(--bs-body-bg) 92%,
+    var(--theme-toolbarHover)
+  );
+}
+.templateRow {
+  --surface-row-min-height: 70px;
+  --surface-row-padding: 1rem 1.25rem;
+  --surface-row-border: 1px solid rgba(var(--theme-color-rgb), 0.12);
+  --surface-row-radius: 16px;
+  --surface-row-bg: color-mix(
+    in srgb,
+    var(--bs-body-bg) 78%,
+    var(--theme-toolbarHover)
+  );
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+.templateLogo {
+  display: block;
+  max-width: 100%;
+  max-height: 28px;
+  object-fit: contain;
+}
+.templateSupport {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: var(--theme-grey);
+}
+.templateSupport .statusIcon {
+  width: 14px;
+  height: 14px;
+}
+.walletSheet {
+  height: auto !important;
+  max-height: 85svh;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+.walletSheet :global(.offcanvas-body) {
+  padding-right: 1rem;
+  padding-left: 1rem;
+  overflow-x: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .walletRowBalanceLoading,
+  .bigBalanceLoading .bigBalanceAmount {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .selectedWalletPanel {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .addWalletPanel {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+  }
+  .addWalletPanel .templateRow {
+    border-color: rgba(var(--theme-color-rgb), 0.16);
+    background: color-mix(
+      in srgb,
+      var(--theme-toolbarHover) 42%,
+      var(--bs-body-bg)
+    );
+  }
+  .bigBalance,
+  .bigBalanceUnavailable {
+    padding: 3.5rem 0;
+  }
+  .walletActions {
+    width: 100%;
+    margin: auto 0 0;
+    gap: 0;
+  }
+  .walletActionsCompact {
+    margin: auto 0 0;
+    padding: 1rem 0 1.25rem;
+  }
+  .walletActionButton {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+  .walletActionButton:disabled {
+    opacity: 0.45;
+  }
+  .walletSidebar,
+  .selectedWalletHeader {
+    display: none !important;
+  }
+}
