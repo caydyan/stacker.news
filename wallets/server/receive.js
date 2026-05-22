@@ -7,7 +7,7 @@ import { protocolCreateInvoice } from '@/wallets/server/protocols'
 
 const MAX_PENDING_INVOICES_PER_WALLET = 25
 
-export async function * createBolt11FromWalletProtocols (walletProtocols, { msats, description, descriptionHash, expiry = 360 }, { models }) {
+export async function * createBolt11FromWalletProtocols (walletProtocols, { msats, description, descriptionHash, expiry = 360 }, { models, limitPending = true }) {
   msats = toPositiveNumber(msats)
 
   for (const protocol of walletProtocols) {
@@ -25,7 +25,7 @@ export async function * createBolt11FromWalletProtocols (walletProtocols, { msat
         bolt11 = await _protocolCreateInvoice(
           protocol,
           { msats, description, descriptionHash, expiry },
-          { models })
+          { models, limitPending })
       } catch (err) {
         throw new Error('failed to create invoice: ' + err.message)
       }
@@ -49,7 +49,7 @@ export async function * createBolt11FromWalletProtocols (walletProtocols, { msat
         }
       }
 
-      yield { bolt11, protocol, logger }
+      yield { bolt11, invoice, protocol, logger }
     } catch (err) {
       console.error('failed to create user invoice:', err)
       logger.error(err.message, { updateStatus: true })
@@ -63,20 +63,22 @@ async function _protocolCreateInvoice (protocol, {
   description,
   descriptionHash,
   expiry = 360
-}, { logger, models }) {
-  // check for pending payouts
-  const pendingPayOutBolt11Count = await models.payOutBolt11.count({
-    where: {
-      protocolId: protocol.id,
-      status: null,
-      payIn: {
-        payInState: { notIn: ['PAID', 'FAILED'] }
+}, { logger, models, limitPending }) {
+  if (limitPending) {
+    // check for pending payouts
+    const pendingPayOutBolt11Count = await models.payOutBolt11.count({
+      where: {
+        protocolId: protocol.id,
+        status: null,
+        payIn: {
+          payInState: { notIn: ['PAID', 'FAILED'] }
+        }
       }
-    }
-  })
+    })
 
-  if (pendingPayOutBolt11Count >= MAX_PENDING_INVOICES_PER_WALLET) {
-    throw new Error(`too many pending invoices: has ${pendingPayOutBolt11Count}, max ${MAX_PENDING_INVOICES_PER_WALLET}`)
+    if (pendingPayOutBolt11Count >= MAX_PENDING_INVOICES_PER_WALLET) {
+      throw new Error(`too many pending invoices: has ${pendingPayOutBolt11Count}, max ${MAX_PENDING_INVOICES_PER_WALLET}`)
+    }
   }
 
   return await withTimeout(

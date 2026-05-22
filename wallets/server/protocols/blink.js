@@ -5,7 +5,7 @@ export const name = 'BLINK'
 
 export async function createInvoice (
   { msats, description, expiry },
-  { apiKeyRecv: apiKey, currencyRecv: currency },
+  { apiKey, currency },
   { signal }) {
   currency = currency ? currency.toUpperCase() : 'BTC'
 
@@ -47,8 +47,8 @@ export async function createInvoice (
   return res.invoice.paymentRequest
 }
 
-export async function testCreateInvoice ({ apiKeyRecv, currencyRecv }, { signal }) {
-  const scopes = await getScopes({ apiKey: apiKeyRecv }, { signal })
+export async function testCreateInvoice ({ apiKey, currency }, { signal }) {
+  const scopes = await getScopes({ apiKey }, { signal })
   if (!scopes.includes(SCOPE_READ)) {
     throw new Error('missing READ scope')
   }
@@ -59,6 +59,6 @@ export async function testCreateInvoice ({ apiKeyRecv, currencyRecv }, { signal 
     throw new Error('missing RECEIVE scope')
   }
 
-  currencyRecv = currencyRecv ? currencyRecv.toUpperCase() : 'BTC'
-  return await createInvoice({ msats: 1000, expiry: 1 }, { apiKeyRecv, currencyRecv }, { signal })
+  currency = currency ? currency.toUpperCase() : 'BTC'
+  return await createInvoice({ msats: 1000, expiry: 1 }, { apiKey, currency }, { signal })
 }

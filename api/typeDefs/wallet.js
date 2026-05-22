@@ -13,6 +13,7 @@ const typeDefs = gql`
 
   extend type Mutation {
     createWithdrawl(invoice: String!, maxFee: Int!): PayIn!
+    createWalletInvoice(walletId: ID!, amount: Int!, description: String): WalletExternalInvoice!
     sendToLnAddr(addr: String!, amount: Int!, maxFee: Int!, comment: String, identifier: Boolean, name: String, email: String): PayIn!
     dropBolt11(hash: String!): Boolean
     buyCredits(credits: Int!, sendProtocolId: Int): PayIn!
@@ -236,6 +237,12 @@ const typeDefs = gql`
     | WalletRecvCLNRest
     | WalletRecvLNDGRPC
     | WalletRecvClink
+
+  type WalletExternalInvoice {
+    bolt11: String!
+    protocolId: ID!
+    protocolName: String!
+  }
 
   type WalletSettings {
     receiveCreditsBelowSats: Int!
