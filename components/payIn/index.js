@@ -1,11 +1,11 @@
 import { msatsToSats, numWithUnits } from '@/lib/format'
+import { bolt11QrTransform } from '@/lib/bolt11'
 import { NORMAL_POLL_INTERVAL_MS } from '@/lib/constants'
 import { FAILED_PAY_IN_STATES, getPayInFailurePresentation, describePayInType } from '@/lib/pay-in'
 import Qr from '../qr'
-import Bolt11Info from './bolt11-info'
+import Bolt11Info, { toBolt11InfoProps } from './bolt11-info'
 import useWatchPayIn from './hooks/use-watch-pay-in'
 import { PayInStatus, PayInStatusSkeleton } from './status'
-import PayInMetadata from './metadata'
 import { PayInContext } from './context'
 import { GET_PAY_IN_FULL_WITHOUT_WALLET_INFO } from '@/fragments/payIn'
 import { PayInSankey, PayInSankeySkeleton } from './sankey'
@@ -53,11 +53,11 @@ export default function PayIn ({ id, ssrData }) {
           <>
             {['PENDING', 'PENDING_HELD'].includes(payIn.payInState)
               ? (
-                <div className='d-flex justify-content-center'>
+                <div className='mt-3 d-flex justify-content-center'>
                   <div style={{ maxWidth: '300px' }}>
                     <Qr
                       value={payIn.payerPrivates.payInBolt11.bolt11}
-                      qrTransform={value => 'lightning:' + value.toUpperCase()}
+                      qrTransform={bolt11QrTransform}
                       description={numWithUnits(msatsToSats(payIn.payerPrivates.payInBolt11.msatsRequested), { abbreviate: false })}
                     />
                   </div>
@@ -67,22 +67,18 @@ export default function PayIn ({ id, ssrData }) {
                   <AccordianItem
                     header='lightning invoice'
                     body={(
-                      <Bolt11Info
-                        bolt11={payIn.payerPrivates.payInBolt11.bolt11}
-                        hash={payIn.payerPrivates.payInBolt11.hash}
-                        preimage={payIn.payerPrivates.payInBolt11.preimage}
-                        description={payIn.payerPrivates.payInBolt11.description}
-                      />
+                      <Bolt11Info {...toBolt11InfoProps(payIn.payerPrivates.payInBolt11)} />
                     )}
                   />
                 </div>
                 )}
-            <PayInMetadata payInBolt11={payIn.payerPrivates.payInBolt11} />
           </>
         )}
-      <div className='mt-3'>
-        <PayInContext payIn={payIn} />
-      </div>
+      {payIn.payInType !== 'PROXY_PAYMENT' && (
+        <div className='mt-3'>
+          <PayInContext payIn={payIn} />
+        </div>
+      )}
       {payIn.mcost > 0 &&
         <div className='mt-5 d-flex flex-column'>
           <h5 className='mb-3'>diagram</h5>

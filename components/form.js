@@ -33,6 +33,7 @@ import { useIsClient } from './use-client'
 import PageLoading from './page-loading'
 import { SNEditor } from './editor'
 import { isAbortError } from '@/lib/error'
+import QrScanner from './qr-scanner'
 export { MultiSelect } from './multi-select'
 export class SessionRequiredError extends Error {
   constructor () {
@@ -1164,10 +1165,6 @@ function PasswordHider ({ onClick, showPass }) {
 function PasswordScanner ({ onScan, text }) {
   const showModal = useShowModal()
   const toaster = useToast()
-  const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), {
-    ssr: false,
-    loading: () => <PageLoading />
-  })
 
   return (
     <InputGroup.Text
@@ -1177,31 +1174,29 @@ function PasswordScanner ({ onScan, text }) {
           return (
             <div>
               {text && <h5 className='line-height-md mb-4 text-center'>{text}</h5>}
-              {Scanner && (
-                <Scanner
-                  formats={['qr_code']}
-                  onScan={([{ rawValue: result }]) => {
-                    if (result) {
-                      onScan(result)
-                      onClose()
-                    }
-                  }}
-                  styles={{
-                    video: {
-                      aspectRatio: '1 / 1'
-                    }
-                  }}
-                  onError={(error) => {
-                    if (error instanceof DOMException) {
-                      console.log(error)
-                    } else {
-                      toaster.danger('qr scan: ' + error?.message || error?.toString?.())
-                    }
+              <QrScanner
+                loading={<PageLoading />}
+                onScan={([{ rawValue: result }]) => {
+                  if (result) {
+                    onScan(result)
                     onClose()
-                  }}
-                  components={{ audio: false }}
-                />
-              )}
+                  }
+                }}
+                styles={{
+                  video: {
+                    aspectRatio: '1 / 1'
+                  }
+                }}
+                onError={(error) => {
+                  if (error instanceof DOMException) {
+                    console.log(error)
+                  } else {
+                    toaster.danger('qr scan: ' + error?.message || error?.toString?.())
+                  }
+                  onClose()
+                }}
+                components={{ audio: false }}
+              />
             </div>
           )
         })

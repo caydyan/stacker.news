@@ -1,10 +1,8 @@
 import { useEffect } from 'react'
 import { numWithUnits } from '@/lib/format'
-import AccordianItem from './accordian-item'
 import Qr, { QrSkeleton } from './qr'
 import { CompactLongCountdown } from './countdown'
-import PayerData from './payer-data'
-import Bolt11Info from './payIn/bolt11-info'
+import Bolt11Info, { toBolt11InfoProps } from './payIn/bolt11-info'
 import { useQuery } from '@apollo/client/react'
 import { INVOICE } from '@/fragments/invoice'
 import { FAST_POLL_INTERVAL_MS, SSR } from '@/lib/constants'
@@ -99,8 +97,6 @@ export default function Invoice ({
     )
   }
 
-  const { bolt11, confirmedPreimage, hash, description } = invoice
-
   return (
     <>
       <WalletError error={walletError} />
@@ -108,51 +104,14 @@ export default function Invoice ({
         value={invoice.bolt11}
         description={numWithUnits(invoice.satsRequested, { abbreviate: false })}
         statusVariant={variant} status={status}
+        copy={!!modal}
       />
       {!modal &&
         <>
           {info && <div className='text-muted fst-italic text-center'>{info}</div>}
-          <InvoiceExtras {...invoice} />
-          <Bolt11Info bolt11={bolt11} hash={hash} preimage={confirmedPreimage} description={description} />
+          <Bolt11Info {...toBolt11InfoProps(invoice)} />
           {invoice?.item && <ActionInfo invoice={invoice} />}
         </>}
-    </>
-  )
-}
-
-export function InvoiceExtras ({ nostr, lud18Data, comment }) {
-  return (
-    <>
-      <div className='w-100'>
-        {nostr
-          ? <AccordianItem
-              header='Nostr Zap Request'
-              body={
-                <pre>
-                  <code>
-                    {JSON.stringify(nostr, null, 2)}
-                  </code>
-                </pre>
-            }
-            />
-          : null}
-      </div>
-      {lud18Data &&
-        <div className='w-100'>
-          <AccordianItem
-            header='sender information'
-            body={<PayerData data={lud18Data} className='text-muted ms-3' />}
-            className='mb-3'
-          />
-        </div>}
-      {comment &&
-        <div className='w-100'>
-          <AccordianItem
-            header='sender comments'
-            body={<span className='text-muted ms-3'>{comment}</span>}
-            className='mb-3'
-          />
-        </div>}
     </>
   )
 }
