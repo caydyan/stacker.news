@@ -173,5 +173,3 @@ function renderWalletRouteGateState (state, { children, errorTitle, loadingMessa
       )
   }
 }
-
-export const WalletRouteGateShell = WalletRouteGate

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { CopyButton, Form, PasswordInput, SubmitButton } from '@/components/form'
 import { Button } from 'react-bootstrap'
+import classNames from 'classnames'
 import { object, string } from 'yup'
 import { useMe } from '@/components/me'
 import { useShowModal } from '@/components/modal'
@@ -9,7 +10,7 @@ import { useGenerateRandomKey, useKeySalt, useSetKey } from '@/wallets/client/ho
 import { deriveKey } from '@/wallets/lib/crypto'
 import { useSingleFlight } from '@/wallets/client/hooks/singleFlight'
 import { useDisablePassphraseExport, useWalletEncryptionUpdate, useWalletReset } from '@/wallets/client/hooks/query'
-import styles from '@/styles/wallet.module.css'
+import styles from '@/styles/wallet/shared.module.css'
 import RefreshIcon from '@/svgs/refresh-line.svg'
 
 function Passphrase ({
@@ -23,7 +24,7 @@ function Passphrase ({
     <div className={styles.passphraseSection}>
       <div className='d-flex justify-content-between align-items-start gap-3'>
         <div>
-          <div className={styles.passphraseSectionTitle}>{title}</div>
+          <div className={classNames(styles.passphraseSectionTitle, 'text-muted')}>{title}</div>
           {hint && (
             <p className='text-muted mb-0 line-height-md'>
               {hint}
@@ -151,7 +152,7 @@ export function WalletPassphrasePrompt ({
             required
             autoFocus
             groupClassName='mb-0'
-            className={styles.passphraseManagerInput}
+            className={classNames(styles.passphraseManagerInput, 'font-monospace')}
           />
 
           <div className={styles.passphraseSetupActions}>
@@ -161,7 +162,7 @@ export function WalletPassphrasePrompt ({
             <div className={styles.passphraseSetupButtons}>
               <button
                 type='button'
-                className={styles.passphraseResetButton}
+                className={classNames(styles.textButton, styles.dangerTextButton, styles.passphraseResetButton)}
                 onClick={showResetPassphraseModal}
               >
                 reset wallets
@@ -293,7 +294,7 @@ export function WalletPassphraseSetup () {
                 readOnly
                 value={candidate.passphrase}
                 groupClassName='mb-0'
-                className={styles.passphraseManagerInput}
+                className={classNames(styles.passphraseManagerInput, 'font-monospace')}
               />
               <Passphrase
                 passphrase={candidate.passphrase}
@@ -307,7 +308,7 @@ export function WalletPassphraseSetup () {
                 <div className={styles.passphraseSetupButtons}>
                   <button
                     type='button'
-                    className={styles.passphraseRegenerateButton}
+                    className={classNames(styles.textButton, styles.passphraseRegenerateButton)}
                     onClick={regeneratePassphrase}
                     disabled={savingPassphrase || regeneratingPassphrase}
                     aria-label='generate a new passphrase'

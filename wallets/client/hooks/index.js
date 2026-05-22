@@ -28,8 +28,6 @@ export * from './diagnostics'
 export * from './dnd'
 export * from './singleFlight'
 export {
-  useWalletProtocolUpsert,
-  useLightningAddressUpsert,
   useWalletEncryptionUpdate,
   useWalletReset,
   useDisablePassphraseExport,

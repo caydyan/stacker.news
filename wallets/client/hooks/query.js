@@ -480,20 +480,3 @@ export function useUpdateKeyHash () {
     await mutate({ variables: { keyHash } })
   }, [mutate])
 }
-
-// Legacy stubs: the per-protocol upsert mutations were replaced by
-// SAVE_WALLET_PROTOCOLS in this commit. The legacy multi-step form module
-// still imports these by name until the configure redesign lands; they throw
-// if invoked so any stray save click surfaces a clear error rather than
-// silently no-oping.
-export function useWalletProtocolUpsert () {
-  return useCallback(() => {
-    throw new Error('useWalletProtocolUpsert was removed; use SAVE_WALLET_PROTOCOLS')
-  }, [])
-}
-
-export function useLightningAddressUpsert () {
-  return useCallback(() => {
-    throw new Error('useLightningAddressUpsert was removed; use SAVE_WALLET_PROTOCOLS')
-  }, [])
-}

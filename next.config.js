@@ -208,6 +208,16 @@ module.exports = withPlausibleProxy({ src: 'https://plausible.io/js/pa-EScEhWlTi
         permanent: true
       },
       {
+        source: '/credits',
+        destination: '/wallets/cowboy-credits',
+        permanent: true
+      },
+      {
+        source: '/withdraw',
+        destination: '/wallets/reward-sats/send',
+        permanent: true
+      },
+      {
         source: '/recent/:slug*',
         destination: '/new/:slug*',
         permanent: true

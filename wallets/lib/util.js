@@ -131,10 +131,6 @@ export function templatePathSegmentToName (pathSegment) {
   return pathSegment.toUpperCase().replace(/-/g, '_')
 }
 
-// Backwards-compat aliases for the legacy [id].js page and card.js until
-// the home-hub commit replaces those call sites.
-export { templateNameToPathSegment as urlify, templatePathSegmentToName as unurlify }
-
 function titleCase (name) {
   return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
 }

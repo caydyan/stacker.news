@@ -62,22 +62,6 @@ export function WalletLayoutHeader ({ children }) {
   )
 }
 
-export function WalletLayoutSubHeader ({ children }) {
-  return (
-    <h6 className='text-muted text-center'>
-      {children}
-    </h6>
-  )
-}
-
-export function WalletLayoutLink ({ children, href }) {
-  return (
-    <Link href={href} className='text-muted fw-bold text-underline'>
-      {children}
-    </Link>
-  )
-}
-
 export function WalletLayoutImageOrName ({ name, height = '50px' }) {
   const img = useWalletImage(name)
   const [imageError, setImageError] = useState(false)
