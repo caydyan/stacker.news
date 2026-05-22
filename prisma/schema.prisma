@@ -1646,6 +1646,8 @@ model PayInBolt11 {
   @@index([cancelledAt])
   @@index([userId])
   @@index([protocolId])
+  // Supports wallet activity filtering by `protocolId IN (...) AND payInId = X`.
+  @@index([protocolId, payInId])
 }
 
 enum WithdrawlStatus {
@@ -1682,6 +1684,8 @@ model PayOutBolt11 {
   @@index([hash])
   @@index([protocolId])
   @@index([status])
+  // Supports wallet activity filtering by `protocolId IN (...) AND payInId = X`.
+  @@index([protocolId, payInId])
 }
 
 model PayInBolt11Lud18 {
