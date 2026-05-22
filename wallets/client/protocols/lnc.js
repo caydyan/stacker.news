@@ -3,6 +3,8 @@ import { msatsToSats } from '@/lib/format'
 import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'LNC'
+// LND enforces routing fee caps via the fee_limit oneof on SendPaymentSync.
+export const enforcesMaxFee = true
 
 const mutex = new Mutex()
 const serverHost = 'mailbox.terminal.lightning.today:443'
@@ -10,10 +12,19 @@ const LNC_SEND_PAYMENT_PERMISSION = 'lnrpc.Lightning.SendPaymentSync'
 const LNC_CHANNEL_BALANCE_PERMISSION = 'lnrpc.Lightning.ChannelBalance'
 const LNC_SEND_COINS_PERMISSION = 'lnrpc.Lightning.SendCoins'
 
-export async function sendPayment (bolt11, credentials, { logger }) {
+export async function sendPayment (bolt11, credentials, { logger, maxFee }) {
   return await mutex.runExclusive(async () => {
     const lnc = await getLNC(credentials, { logger })
-    const { paymentError, paymentPreimage: preimage } = await lnc.lnd.lightning.sendPaymentSync({ payment_request: bolt11 })
+    const request = { payment_request: bolt11 }
+    if (maxFee !== undefined && maxFee !== null) {
+      if (!Number.isSafeInteger(maxFee) || maxFee < 0) {
+        throw new Error(`invalid maxFee: ${maxFee}`)
+      }
+      // LND FeeLimit accepts fixed sats via the `fixed` oneof field; serialize
+      // as a string to avoid the 53-bit int safety ceiling.
+      request.fee_limit = { fixed: String(maxFee) }
+    }
+    const { paymentError, paymentPreimage: preimage } = await lnc.lnd.lightning.sendPaymentSync(request)
     if (paymentError) throw new Error(paymentError)
     if (!preimage) throw new Error('No preimage in response')
     return Buffer.from(preimage, 'base64').toString('hex')

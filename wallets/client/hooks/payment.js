@@ -16,7 +16,6 @@ import { useSendProtocols } from './wallet'
 export function useWalletPayment () {
   const protocols = useSendProtocols()
   const walletSendReady = useWalletSendReady()
-  const sendPayment = useSendPayment()
   const payInHelper = usePayInHelper()
   const { me } = useMe()
   const loggerFactory = useWalletLoggerFactory()
@@ -45,7 +44,7 @@ export function useWalletPayment () {
       const controller = payInHelper.waitCheckController(latestPayIn.id)
 
       const logger = loggerFactory(protocol, latestPayIn)
-      const paymentPromise = sendPayment(protocol, latestPayIn.payerPrivates.payInBolt11, logger)
+      const paymentPromise = sendWalletPayment(protocol, latestPayIn.payerPrivates.payInBolt11, logger)
       const pollPromise = controller.wait(waitFor)
 
       try {
@@ -111,35 +110,37 @@ export function useWalletPayment () {
 
     // if we reach this line, no wallet payment succeeded
     throw new WalletPaymentAggregateError([aggregateError], latestPayIn)
-  }, [protocols, walletSendReady, me, payInHelper, sendPayment, loggerFactory])
+  }, [protocols, walletSendReady, me, payInHelper, loggerFactory])
 }
 
-function useSendPayment () {
-  return useCallback(async (protocol, payInBolt11, logger) => {
-    try {
-      logger.info(`↗ sending payment: ${formatSats(msatsToSats(payInBolt11.msatsRequested))}`)
-      const preimage = await withTimeout(
-        protocol.sendPayment(
-          payInBolt11.bolt11,
-          protocol.config,
-          { signal: timeoutSignal(WALLET_SEND_PAYMENT_TIMEOUT_MS) }
-        ),
-        WALLET_SEND_PAYMENT_TIMEOUT_MS)
+// payment is the minimal BOLT11 shape used by both PayIn rows and direct wallet sends.
+export async function sendWalletPayment (protocol, payment, logger, { amountText, maxFee, sendPayment = protocol.sendPayment, timeout = WALLET_SEND_PAYMENT_TIMEOUT_MS } = {}) {
+  if (!payment.hash) throw new Error('sendWalletPayment requires payment.hash')
 
-      // some wallets like Coinos will always immediately return success without providing the preimage
-      if (!preimage) {
-        return logger.warn('wallet returned success without proof of payment', { updateStatus: true })
-      }
-      if (!verifyPreimage(payInBolt11.hash, preimage)) {
-        return logger.warn('wallet returned success with invalid proof of payment', { updateStatus: true })
-      }
-      logger.ok(`↗ payment sent: ${formatSats(msatsToSats(payInBolt11.msatsRequested))}`, { updateStatus: true })
-    } catch (err) {
-      // we don't log the error here since we want to handle receiver errors separately
-      const message = err.message || err.toString?.()
-      throw new WalletSenderError(protocol.name, payInBolt11, message)
+  const label = amountText ?? formatSats(msatsToSats(payment.msatsRequested))
+  try {
+    logger.info(`↗ sending payment: ${label}`)
+    const preimage = await withTimeout(
+      sendPayment(
+        payment.bolt11,
+        protocol.config,
+        { signal: timeoutSignal(timeout), maxFee, timeout }
+      ),
+      timeout)
+
+    // some wallets like Coinos will always immediately return success without providing the preimage
+    if (!preimage) {
+      return logger.warn('wallet returned success without proof of payment', { updateStatus: true })
     }
-  }, [])
+    if (!verifyPreimage(payment.hash, preimage)) {
+      return logger.warn('wallet returned success with invalid proof of payment', { updateStatus: true })
+    }
+    logger.ok(`↗ payment sent: ${label}`, { updateStatus: true })
+  } catch (err) {
+    // we don't log the error here since callers decide whether to retry or surface it directly
+    const message = err.message || err.toString?.()
+    throw new WalletSenderError(protocol.name, payment, message)
+  }
 }
 
 function verifyPreimage (hash, preimage) {

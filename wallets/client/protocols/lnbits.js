@@ -3,6 +3,8 @@ import { assertContentTypeJson } from '@/lib/url'
 import { msatsBalance } from '@/wallets/lib/balance'
 
 export const name = 'LNBITS'
+// LNbits payments API has no per-payment routing fee cap field.
+export const enforcesMaxFee = false
 
 export async function sendPayment (bolt11, { url, apiKey }, { signal }) {
   const response = await postPayment(bolt11, { url, apiKey }, { signal })

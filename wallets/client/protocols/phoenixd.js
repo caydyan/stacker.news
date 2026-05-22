@@ -3,6 +3,9 @@ import { assertContentTypeJson, assertResponseOk } from '@/lib/url'
 import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'PHOENIXD'
+// phoenixd /payinvoice does not accept a routing fee cap; users rely on
+// phoenix.acinq's own fee policy.
+export const enforcesMaxFee = false
 
 export async function sendPayment (bolt11, { url, apiKey }, { signal }) {
   // https://phoenix.acinq.co/server/api#pay-bolt11-invoice

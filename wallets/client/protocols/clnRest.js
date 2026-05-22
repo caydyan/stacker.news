@@ -2,9 +2,12 @@ import { getBalance as clnGetBalance, runeMayAllowMethod, sendPayment as clnSend
 import { msatsBalance } from '@/wallets/lib/balance'
 
 export const name = 'CLN_REST'
+// CLN enforces a hard routing fee cap via `pay.maxfee`, so we can pass the
+// user-supplied max fee through to the wallet and trust it.
+export const enforcesMaxFee = true
 
-export const sendPayment = async (bolt11, config, { signal }) => {
-  return await clnSendPayment(bolt11, config, { signal })
+export const sendPayment = async (bolt11, config, { signal, maxFee }) => {
+  return await clnSendPayment(bolt11, config, { signal, maxFee })
 }
 
 export const getBalance = async (config, { signal } = {}) => {

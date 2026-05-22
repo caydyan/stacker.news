@@ -2,8 +2,10 @@ import { decodeBech32, generateSecretKey, newNdebitPaymentRequest, SendNdebitReq
 import { WALLET_SEND_PAYMENT_TIMEOUT_MS } from '@/lib/constants'
 
 export const name = 'CLINK'
+// ndebit/CLINK has no protocol-level routing fee cap.
+export const enforcesMaxFee = false
 
-export async function sendPayment (bolt11, { ndebit, secretKey }, { signal }) {
+export async function sendPayment (bolt11, { ndebit, secretKey }, { timeout = WALLET_SEND_PAYMENT_TIMEOUT_MS } = {}) {
   const { data: { pubkey, relay, pointer } } = decodeBech32(ndebit)
 
   const pool = new SimplePool()
@@ -11,8 +13,7 @@ export async function sendPayment (bolt11, { ndebit, secretKey }, { signal }) {
 
   let response
   try {
-    const timeout = Math.floor(WALLET_SEND_PAYMENT_TIMEOUT_MS / 1000)
-    response = await SendNdebitRequest(pool, Buffer.from(secretKey, 'hex'), [relay], pubkey, request, timeout)
+    response = await SendNdebitRequest(pool, Buffer.from(secretKey, 'hex'), [relay], pubkey, request, Math.ceil(timeout / 1000))
   } catch (e) {
     throw typeof e === 'string' ? new Error(e) : e
   } finally {

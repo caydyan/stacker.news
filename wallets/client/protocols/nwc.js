@@ -3,6 +3,9 @@ import { WalletPermissionsError } from '@/wallets/client/errors'
 import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'NWC'
+// NIP-47 pay_invoice has no standardized per-payment fee cap; wallets enforce
+// their own daily/transaction budgets. We do not pretend to cap fees here.
+export const enforcesMaxFee = false
 
 export async function sendPayment (bolt11, { url }, { signal }) {
   const result = await nwcTryRun(nwc => nwc.lnPay({ pr: bolt11 }), { url }, { signal })

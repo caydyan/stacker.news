@@ -1,6 +1,9 @@
 import { WalletError } from '@/wallets/client/errors'
 
 export const name = 'WEBLN'
+// WebLN's sendPayment does not standardize a fee cap; it relies on the
+// provider extension's own budget controls.
+export const enforcesMaxFee = false
 
 export async function sendPayment (bolt11) {
   if (typeof window.webln === 'undefined') {

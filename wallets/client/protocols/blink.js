@@ -2,6 +2,8 @@ import { getScopes, SCOPE_READ, SCOPE_WRITE, getWallet, request } from '@/wallet
 import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'BLINK'
+// Blink's lnInvoicePaymentSend does not expose a per-call fee cap.
+export const enforcesMaxFee = false
 
 export async function sendPayment (bolt11, { apiKey, currency }, { signal }) {
   const wallet = await getWallet({ apiKey, currency }, { signal })
