@@ -272,8 +272,8 @@ export const ADD_WALLET_LOG = gql`
 `
 
 export const WALLET_LOGS = gql`
-  query WalletLogs($protocolId: Int, $payInId: Int, $cursor: String, $debug: Boolean) {
-    walletLogs(protocolId: $protocolId, payInId: $payInId, cursor: $cursor, debug: $debug) {
+  query WalletLogs($protocolId: Int, $walletId: ID, $payInId: Int, $cursor: String, $debug: Boolean) {
+    walletLogs(protocolId: $protocolId, walletId: $walletId, payInId: $payInId, cursor: $cursor, debug: $debug) {
       entries {
         id
         level

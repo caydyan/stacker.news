@@ -6,7 +6,7 @@ const typeDefs = gql`
     connectAddress: String!
     wallets: [WalletOrTemplate!]!
     walletSettings: WalletSettings!
-    walletLogs(protocolId: Int, payInId: Int, cursor: String, debug: Boolean): WalletLogs!
+    walletLogs(protocolId: Int, walletId: ID, payInId: Int, cursor: String, debug: Boolean): WalletLogs!
   }
 
   extend type Mutation {

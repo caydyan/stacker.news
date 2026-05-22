@@ -290,7 +290,7 @@ export async function saveWalletProtocols (parent, { walletId, templateName, ups
   return wallet ? mapWalletResolveTypes(wallet) : null
 }
 
-async function walletLogs (parent, { protocolId, walletId, payInId, cursor }, { me, models }) {
+async function walletLogs (parent, { protocolId, walletId, payInId, cursor, debug }, { me, models }) {
   if (!me) throw new GqlAuthenticationError()
 
   const decodedCursor = decodeCursor(cursor)
@@ -299,7 +299,7 @@ async function walletLogs (parent, { protocolId, walletId, payInId, cursor }, { 
     createdAt: {
       lt: decodedCursor.time
     },
-    level: { not: 'DEBUG' }
+    level: debug ? 'DEBUG' : { not: 'DEBUG' }
   }
 
   if (protocolId !== undefined) {
@@ -421,13 +421,14 @@ async function addWalletLog (parent, { protocolId, level, message, timestamp, pa
   return true
 }
 
-async function deleteWalletLogs (parent, { protocolId }, { me, models }) {
+async function deleteWalletLogs (parent, { protocolId, debug }, { me, models }) {
   if (!me) throw new GqlAuthenticationError()
 
   await models.walletLog.deleteMany({
     where: {
       userId: me.id,
-      protocolId
+      protocolId,
+      level: debug ? 'DEBUG' : { not: 'DEBUG' }
     }
   })
 
