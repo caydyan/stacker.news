@@ -23,6 +23,17 @@ export function walletLud16Domain (name) {
   return typeof url === 'string' ? new URL(url).hostname : url.lud16Domain
 }
 
+export function stripLightningAddressDomain (address, domain) {
+  if (!address || !domain) return address
+  const suffix = `@${domain}`
+  return address.endsWith(suffix) ? address.slice(0, -suffix.length) : address
+}
+
+export function appendLightningAddressDomain (address, domain) {
+  if (!address || !domain || address.includes('@')) return address
+  return `${address}@${domain}`
+}
+
 export function walletGuideUrl (name) {
   return walletJson(name)?.guide
 }
@@ -112,13 +123,17 @@ export function isEncryptedField (protocol, key) {
   return fields.find(field => field.name === key && field.encrypt)
 }
 
-export function urlify (name) {
+export function templateNameToPathSegment (name) {
   return name.toLowerCase().replace(/_/g, '-')
 }
 
-export function unurlify (urlName) {
-  return urlName.toUpperCase().replace(/-/g, '_')
+export function templatePathSegmentToName (pathSegment) {
+  return pathSegment.toUpperCase().replace(/-/g, '_')
 }
+
+// Backwards-compat aliases for the legacy [id].js page and card.js until
+// the home-hub commit replaces those call sites.
+export { templateNameToPathSegment as urlify, templatePathSegmentToName as unurlify }
 
 function titleCase (name) {
   return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
