@@ -1,7 +1,5 @@
-import { snFetch } from '@/lib/fetch'
 import { msatsSatsFloor } from '@/lib/format'
-import { lnAddrOptions } from '@/lib/lnurl'
-import { assertContentTypeJson, assertResponseOk } from '@/lib/url'
+import { fetchLnAddrInvoiceResponse, fetchLnAddrOptions, lnAddrInvoiceUrl, utf8ByteLength } from '@/lib/lnurl'
 
 export const name = 'LN_ADDR'
 
@@ -10,8 +8,8 @@ export const createInvoice = async (
   { address },
   { signal }
 ) => {
-  const { min, callback, commentAllowed } = await lnAddrOptions(address, { signal })
-  const callbackUrl = new URL(callback)
+  const options = await fetchLnAddrOptions(address, { signal })
+  const { min } = options
 
   if (!msats) {
     // use min sendable amount by default
@@ -24,23 +22,15 @@ export const createInvoice = async (
   // most lnurl providers suck nards so we have to floor to nearest sat
   msats = msatsSatsFloor(msats)
 
-  callbackUrl.searchParams.append('amount', msats)
-
-  if (commentAllowed >= description?.length) {
-    callbackUrl.searchParams.append('comment', description)
-  }
-
-  // call callback with amount and conditionally comment
-  const method = 'GET'
-  const res = await snFetch(callbackUrl.toString(), { method, signal })
-
-  assertResponseOk(res, { method })
-  assertContentTypeJson(res, { method })
-
-  const body = await res.json()
-  if (body.status === 'ERROR') {
-    throw new Error(body.reason)
-  }
+  // LUD-12 measures comments in bytes; only forward the description if it
+  // actually fits within the provider's allowance.
+  const comment = description && utf8ByteLength(description) > 0 && options.commentAllowed >= utf8ByteLength(description)
+    ? description
+    : undefined
+  const body = await fetchLnAddrInvoiceResponse(lnAddrInvoiceUrl(
+    options,
+    { msats, comment }
+  ), { signal })
 
   return body.pr
 }
