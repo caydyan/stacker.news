@@ -207,6 +207,15 @@ export const DELETE_WALLET = gql`
     deleteWallet(id: $id)
   }`
 
+export const CREATE_WALLET_INVOICE = gql`
+  mutation createWalletInvoice($walletId: ID!, $amount: Int!, $description: String) {
+    createWalletInvoice(walletId: $walletId, amount: $amount, description: $description) {
+      bolt11
+      protocolId
+      protocolName
+    }
+  }`
+
 export const DISABLE_PASSPHRASE_EXPORT = gql`
   mutation DisablePassphraseExport {
     disablePassphraseExport
