@@ -10,13 +10,13 @@ import { isTemplate } from '@/wallets/lib/util'
 //   when we delete logs for a protocol, the cache is not updated
 //   so when we go to all wallet logs, we still see the deleted logs until the query is refetched
 
-export function WalletLogs ({ protocol, wallet, payInId, className, debug, poll = true, pollInterval }) {
-  const { logs, loadMore, hasMore, loading, clearLogs } = useWalletLogs(protocol, debug, payInId, {
+export function WalletLogs ({ protocol, wallet, payInId, className, poll = true, pollInterval }) {
+  const { logs, loadMore, hasMore, loading, clearLogs } = useWalletLogs(protocol, payInId, {
     poll,
     pollInterval,
     walletId: wallet ? Number(wallet.id) : undefined
   })
-  const deleteLogs = useDeleteWalletLogs(protocol, debug)
+  const deleteLogs = useDeleteWalletLogs(protocol)
 
   const onDelete = useCallback(() => {
     deleteLogs({ onSuccess: clearLogs })
@@ -31,7 +31,7 @@ export function WalletLogs ({ protocol, wallet, payInId, className, debug, poll 
 
   // showing delete button and logs footer for temporary template logs is unnecessary clutter
   const template = protocol && isTemplate(protocol)
-  const canDelete = !template && payInId === undefined
+  const canDelete = !template && payInId === undefined && !wallet
 
   return (
     <div className={className}>
@@ -99,7 +99,7 @@ export function LogMessage ({ tag, level, message, context, ts }) {
         <Level level={level} />
         {tag !== null && <Tag tag={tag?.toLowerCase() ?? 'system'} />}
         <Message message={message} />
-        {hasContext && <Indicator show={showContext} />}
+        <Indicator show={showContext} visible={hasContext} />
       </div>
       {hasContext && showContext && <Context context={filtered} />}
     </>
@@ -139,7 +139,6 @@ function Level ({ level }) {
       className = 'text-warning'; break
     case 'info':
       className = 'text-info'; break
-    case 'debug':
     default:
       className = 'text-muted'; break
   }
@@ -151,8 +150,8 @@ function Message ({ message }) {
   return <div className={styles.message}>{message}</div>
 }
 
-function Indicator ({ show }) {
-  return <div className={styles.indicator}>{show ? '-' : '+'}</div>
+function Indicator ({ show, visible }) {
+  return <div className={styles.indicator}>{visible ? (show ? '-' : '+') : null}</div>
 }
 
 function Context ({ context }) {

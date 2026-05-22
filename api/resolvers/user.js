@@ -832,14 +832,6 @@ export default {
         await models.mute.create({ data: { ...lookupData } })
       }
       return { id }
-    },
-    setDiagnostics: async (parent, { diagnostics }, { me, models }) => {
-      if (!me) {
-        throw new GqlAuthenticationError()
-      }
-
-      await models.user.update({ where: { id: me.id }, data: { diagnostics } })
-      return diagnostics
     }
   },
 
