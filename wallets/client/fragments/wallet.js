@@ -207,6 +207,25 @@ export const DELETE_WALLET = gql`
     deleteWallet(id: $id)
   }`
 
+export const SAVE_WALLET_PROTOCOLS = gql`
+  ${USER_WALLET_FIELDS}
+  mutation SaveWalletProtocols(
+    $walletId: ID
+    $templateName: ID
+    $upserts: [WalletProtocolUpsertInput!]!
+    $removeIds: [ID!]!
+  ) {
+    saveWalletProtocols(
+      walletId: $walletId
+      templateName: $templateName
+      upserts: $upserts
+      removeIds: $removeIds
+    ) {
+      ...WalletFields
+    }
+  }
+`
+
 export const CREATE_WALLET_INVOICE = gql`
   mutation createWalletInvoice($walletId: ID!, $amount: Int!, $description: String) {
     createWalletInvoice(walletId: $walletId, amount: $amount, description: $description) {

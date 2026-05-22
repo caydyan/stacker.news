@@ -1,6 +1,6 @@
 import { GqlAuthenticationError, GqlInputError } from '@/lib/error'
 import { mapWalletResolveTypes } from '@/wallets/server/resolvers/util'
-import { removeWalletProtocol, upsertWalletProtocol, updateWalletBadges } from './protocol'
+import { updateExistingProtocolConfigInTransaction, updateWalletBadges } from './protocol'
 import { validateSchema, walletSettingsSchema } from '@/lib/validate'
 
 const WalletOrTemplate = {
@@ -157,11 +157,8 @@ async function walletSettings (parent, args, { me, models }) {
   return await models.user.findUnique({ where: { id: me.id } })
 }
 
-async function assertNoServerSendProtocols (tx, { userId, wallets }) {
-  const hasPayloadSendProtocols = wallets.some(({ protocols }) => protocols.some(({ send }) => send))
-  if (hasPayloadSendProtocols) return
-
-  const existingSendProtocols = await tx.walletProtocol.count({
+async function assertRotationPayloadCoversSendProtocols (tx, { userId, updatedSendProtocolIds }) {
+  const currentSendProtocolCount = await tx.walletProtocol.count({
     where: {
       send: true,
       wallet: {
@@ -170,9 +167,7 @@ async function assertNoServerSendProtocols (tx, { userId, wallets }) {
     }
   })
 
-  if (existingSendProtocols > 0) {
-    throw new GqlInputError('unlock or reset existing sending wallets before changing passphrase')
-  }
+  if (currentSendProtocolCount !== updatedSendProtocolIds.size) throw new GqlInputError('wallet changed, please retry rotation')
 }
 
 async function updateWalletEncryption (parent, { keyHash, wallets }, { me, models }) {
@@ -182,14 +177,16 @@ async function updateWalletEncryption (parent, { keyHash, wallets }, { me, model
   const { vaultKeyHash: oldKeyHash } = await getVaultMetadata(models, me.id)
 
   return await models.$transaction(async tx => {
-    await assertNoServerSendProtocols(tx, { userId: me.id, wallets })
+    const updatedSendProtocolIds = new Set()
 
     for (const { id: walletId, protocols } of wallets) {
       for (const { name, send, config } of protocols) {
-        const mutation = upsertWalletProtocol({ name, send })
-        await mutation(parent, { walletId, ignoreKeyHash: true, ...config }, { me, models: tx, tx })
+        const updated = await updateExistingProtocolConfigInTransaction({ tx, walletId, userId: me.id, name, send, config })
+        if (send) updatedSendProtocolIds.add(updated.id)
       }
     }
+
+    await assertRotationPayloadCoversSendProtocols(tx, { userId: me.id, updatedSendProtocolIds })
 
     // optimistic concurrency control:
     // make sure the user's vault key didn't change while we were updating the protocols
@@ -229,18 +226,18 @@ async function resetWallets (parent, { newKeyHash }, { me, models }) {
   const { vaultKeyHash: oldHash } = await getVaultMetadata(models, me.id)
 
   await models.$transaction(async tx => {
-    const protocols = await tx.walletProtocol.findMany({
-      where: {
-        send: true,
-        wallet: {
-          userId: me.id
-        }
-      }
+    // vaults are deleted via trigger
+    await tx.walletProtocol.deleteMany({
+      where: { send: true, wallet: { userId: me.id } }
     })
 
-    for (const protocol of protocols) {
-      await removeWalletProtocol(parent, { id: protocol.id }, { me, tx })
-    }
+    // Drop any wallets that lost their last protocol so the user is not left
+    // with empty stubs after a reset.
+    await tx.wallet.deleteMany({
+      where: { userId: me.id, protocols: { none: {} } }
+    })
+
+    await updateWalletBadges({ userId: me.id, tx })
 
     // TODO(wallet-v2): nullable vaultKeyHash column
     await updateVaultMetadata(tx, {

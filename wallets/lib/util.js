@@ -81,16 +81,6 @@ export function protocolServerSchema ({ name, send }, { keyHash, ignoreKeyHash }
   return schema
 }
 
-export function protocolMutationName ({ name, send }) {
-  const relationName = protocolRelationName({ name, send })
-  return `upsert${relationName.charAt(0).toUpperCase() + relationName.slice(1)}`
-}
-
-export function protocolTestMutationName ({ name, send }) {
-  const relationName = protocolRelationName({ name, send })
-  return `test${relationName.charAt(0).toUpperCase() + relationName.slice(1)}`
-}
-
 export function protocolFields ({ name, send }) {
   return protocol({ name, send })?.fields || []
 }
