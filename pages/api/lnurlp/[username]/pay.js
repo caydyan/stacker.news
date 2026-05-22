@@ -1,5 +1,5 @@
 import models from '@/api/models'
-import { lnurlPayMetadata } from '@/lib/lnurl'
+import { lnurlPayMetadata, lnurlpVerifyUrl, utf8ByteLength } from '@/lib/lnurl'
 import { schnorr } from '@noble/curves/secp256k1'
 import { createHash } from 'crypto'
 import { LNURLP_COMMENT_MAX_LENGTH } from '@/lib/constants'
@@ -46,10 +46,11 @@ export default async ({ query: { username, amount, nostr, comment, payerdata: pa
       }
     }
 
-    if (comment?.length > LNURLP_COMMENT_MAX_LENGTH) {
+    // LUD-12 expresses commentAllowed in bytes.
+    if (comment && utf8ByteLength(comment) > LNURLP_COMMENT_MAX_LENGTH) {
       return res.status(400).json({
         status: 'ERROR',
-        reason: `comment cannot exceed ${LNURLP_COMMENT_MAX_LENGTH} characters in length`
+        reason: `comment cannot exceed ${LNURLP_COMMENT_MAX_LENGTH} bytes in length`
       })
     }
 
@@ -91,7 +92,7 @@ export default async ({ query: { username, amount, nostr, comment, payerdata: pa
     return res.status(200).json({
       pr: payInBolt11.bolt11,
       routes: [],
-      verify: `${process.env.NEXT_PUBLIC_URL}/api/lnurlp/${username}/verify/${payInBolt11.hash}`
+      verify: lnurlpVerifyUrl(username, payInBolt11.hash)
     })
   } catch (error) {
     console.log(error)
