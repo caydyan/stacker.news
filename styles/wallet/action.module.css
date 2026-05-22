@@ -1,0 +1,375 @@
+/* Wallet send and receive actions */
+
+.walletActionPage {
+  width: min(100%, 1120px);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  background: var(--bs-body-bg);
+}
+.walletActionBody {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  gap: 3rem;
+  padding: 0;
+  overflow-y: auto;
+}
+.walletActionFields,
+.walletActionResult {
+  width: min(100%, 560px);
+}
+.walletActionFields {
+  margin-right: auto;
+  gap: 2rem;
+}
+.walletActionResult {
+  margin-right: auto;
+  margin-left: auto;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+.walletActionWalletRow,
+.walletDetectedInvoiceRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+}
+.walletActionWalletRow {
+  width: 100%;
+  min-height: 2.25rem;
+}
+.walletActionAvailable {
+  flex: 0 0 auto;
+  justify-self: end;
+  min-width: max-content;
+  min-height: 2.25rem;
+}
+.walletActionAvailableAmount {
+  color: var(--bs-body-color);
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+.walletActionAvailableLabel {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  margin-top: 0.18rem;
+  text-transform: uppercase;
+}
+.walletActionWallet {
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+.walletActionSubtitle {
+  font-size: 0.95rem;
+}
+.walletActionBody :global(form) {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.walletActionFields :global(.form-group),
+.toggleChipSection :global(.form-group),
+.walletMaxFee :global(.form-group) {
+  margin-bottom: 0;
+}
+.walletActionBody :global(textarea.form-control) {
+  min-height: 8rem;
+}
+.walletActionBody :global(textarea.form-control).walletDestinationInput {
+  min-height: 86px;
+  max-height: 12rem;
+  resize: vertical;
+}
+.walletDetectedInvoiceRow {
+  gap: 0.75rem;
+  /* Matches .walletDestinationInput textarea min-height so the input-slot
+     doesn't visibly shrink when the textarea is swapped for the detected row. */
+  min-height: 86px;
+}
+.walletDetectedInvoiceIdentity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.walletDetectedInvoiceValue {
+  min-width: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.walletDetectedInvoiceDot {
+  margin-right: 0.35rem;
+}
+.walletInvoiceActions svg {
+  color: currentColor;
+  fill: currentColor;
+}
+.walletInvoiceScannerOverlay {
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+}
+.walletInvoiceScannerHeader {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top) + 0.75rem) 1rem 0.75rem;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 75%), transparent);
+  font-weight: 800;
+}
+.walletInvoiceScannerClose {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+}
+.walletInvoiceScannerStage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem calc(env(safe-area-inset-bottom) + 2rem);
+}
+.walletInvoiceScannerViewport {
+  position: relative;
+  width: min(100%, 420px, calc(100vw - 2.5rem));
+  max-height: min(100%, 420px);
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgb(255 255 255 / 6%);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 55%);
+  aspect-ratio: 1 / 1;
+}
+.walletInvoiceScannerViewport video {
+  object-fit: cover;
+}
+.walletInvoiceScannerFrame {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(68%, 286px);
+  border: 4px solid rgb(255 255 255 / 92%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 255 255 / 92%) 0 6px,
+    transparent 6.5px
+  );
+  box-shadow: 0 0 18px rgb(0 0 0 / 45%);
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1 / 1;
+  pointer-events: none;
+}
+.walletInvoiceScannerFrame::before,
+.walletInvoiceScannerFrame::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  box-shadow: 0 0 18px rgb(0 0 0 / 45%);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+.walletInvoiceScannerFrame::before {
+  width: calc(100% + 88px);
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    rgb(255 255 255 / 92%) 0 24%,
+    transparent 24% 76%,
+    rgb(255 255 255 / 92%) 76% 100%
+  );
+}
+.walletInvoiceScannerFrame::after {
+  width: 4px;
+  height: calc(100% + 88px);
+  background: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 92%) 0 24%,
+    transparent 24% 76%,
+    rgb(255 255 255 / 92%) 76% 100%
+  );
+}
+.walletInvoiceScannerHint {
+  color: rgb(255 255 255 / 72%);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+.walletInvoiceScannerError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  color: rgb(255 255 255 / 75%);
+  font-weight: 700;
+  text-align: center;
+}
+.walletLnAddrPending {
+  margin-top: 0.35rem;
+  min-height: calc(0.875rem * 1.25);
+}
+.toggleChipSection {
+  margin-top: 0.75rem;
+}
+.toggleChipLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.toggleChip {
+  --focus-ring-offset: 2px;
+  --chip-padding: 0.35rem 0.8rem;
+  min-height: 36px;
+}
+.toggleChipIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: currentColor !important;
+  fill: currentColor !important;
+}
+.walletMaxFee {
+  gap: 0.6rem;
+}
+.walletMaxFeeSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.walletMaxFeeLabel {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.walletMaxFeeControl {
+  --chip-padding: 0.35rem 0.65rem;
+  --chip-radius: 6px;
+  --chip-bg: transparent;
+  --chip-color: var(--bs-body-color);
+  min-height: 42px;
+}
+.walletMaxFeeAmount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.walletMaxFeeUnit {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.walletMaxFeeIcon {
+  margin-left: 0.15rem;
+  fill: currentColor;
+}
+.walletActionSubmit {
+  min-width: 180px;
+  font-weight: 800;
+}
+.walletActionSubmit small {
+  font-size: 0.875em;
+  font-weight: 400;
+}
+.walletActionResult :global(.input-group) {
+  margin-right: auto;
+  margin-left: auto;
+  max-width: 420px;
+}
+.walletActionSuccess {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+.walletSentBlock {
+  margin: 0;
+  gap: 1.5rem;
+}
+.walletSentSummary {
+  gap: 0.35rem;
+}
+.walletSentLabel {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+.walletSentAmount {
+  gap: 0.35rem;
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.walletSentAmountUnit {
+  font-size: 0.3em;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding-bottom: 0.5em;
+}
+.walletSentTo {
+  max-width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.walletSentDest {
+  color: var(--bs-body-color);
+  overflow-wrap: anywhere;
+}
+.walletActionInternalIcon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--bs-body-color);
+  fill: currentColor;
+}
+.walletActionWalletName {
+  color: var(--bs-body-color);
+}
+.walletActionFooter {
+  --wallet-bottom-bar-padding: 1.5rem 0 0;
+  margin-top: auto;
+}
+
+@media (max-width: 767px) {
+  .walletActionPage {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+  }
+  .walletActionBody {
+    padding: 0;
+  }
+  .walletActionBody :global(form),
+  .walletActionResult,
+  .walletActionFields {
+    width: 100%;
+    max-width: 100%;
+  }
+  .walletActionResult {
+    padding-top: 1.5rem;
+  }
+}

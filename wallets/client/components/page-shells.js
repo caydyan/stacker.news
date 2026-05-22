@@ -1,7 +1,7 @@
 import Moon from '@/svgs/moon-fill.svg'
 import { useMe } from '@/components/me'
 import { useEffect, useState } from 'react'
-import { WalletLayout } from './layout'
+import { WalletShellMain } from './layout'
 import { WalletPassphrasePrompt, WalletPassphraseSetup } from './passphrase'
 import {
   KEY_STORAGE_UNAVAILABLE,
@@ -13,41 +13,84 @@ import {
   useWalletSendReady
 } from '../hooks/global'
 
-export function WalletCenteredPromptShell ({ children }) {
+function CenteredPrompt ({ children }) {
   return (
-    <WalletLayout>
-      <div className='py-5 d-flex flex-column align-items-center justify-content-center flex-grow-1 mx-auto' style={{ maxWidth: '500px' }}>
+    <WalletShellMain>
+      <div className='py-5 px-3 px-md-0 w-100 d-flex flex-column align-items-center justify-content-center flex-grow-1 mx-auto' style={{ maxWidth: '500px' }}>
         {children}
       </div>
-    </WalletLayout>
+    </WalletShellMain>
   )
 }
 
 export function WalletErrorShell ({ title, message }) {
   return (
-    <WalletLayout>
+    <WalletShellMain>
       <div className='py-5 text-center d-flex flex-column align-items-center justify-content-center flex-grow-1'>
         <span className='text-muted fw-bold my-1'>{title}</span>
         <small className='d-block text-muted'>
           {message}
         </small>
       </div>
-    </WalletLayout>
+    </WalletShellMain>
   )
 }
 
 export function WalletLoadingShell ({ message = 'loading wallets' }) {
   return (
-    <WalletLayout>
+    <WalletShellMain mobileTopBar={false}>
       <div className='py-5 text-center d-flex flex-column align-items-center justify-content-center flex-grow-1 text-muted'>
         <Moon className='spin fill-grey' height={28} width={28} />
         <small className='d-block mt-3 text-muted'>{message}</small>
       </div>
-    </WalletLayout>
+    </WalletShellMain>
   )
 }
 
-export function WalletRouteGateShell ({ children, errorTitle, loadingMessage }) {
+export function WalletRoutePage ({
+  ready,
+  resource,
+  notFoundTitle = 'wallet not found',
+  notFoundMessage = 'this wallet could not be found',
+  children
+}) {
+  return (
+    <WalletRouteGate>
+      {!ready
+        ? <WalletLoadingShell />
+        : !resource
+            ? <WalletErrorShell title={notFoundTitle} message={notFoundMessage} />
+            : children(resource)}
+    </WalletRouteGate>
+  )
+}
+
+function walletRouteGateState ({
+  walletsRequired = true,
+  key,
+  keyStorageUnavailable,
+  wrongKey,
+  keySyncInProgress,
+  walletSendReady,
+  walletsError,
+  showPassphrase,
+  hasSendWallet,
+  justUnlocked
+}) {
+  const canRecoverReceiveOnlyPassphrase = wrongKey && showPassphrase && !hasSendWallet
+
+  if (!walletsRequired) return { type: 'ready' }
+  if (keyStorageUnavailable) return { type: 'storage-unavailable' }
+  if (canRecoverReceiveOnlyPassphrase && !walletsError && !walletSendReady) return { type: 'loading' }
+  if (canRecoverReceiveOnlyPassphrase && walletSendReady) return { type: 'passphrase-setup' }
+  if (wrongKey) return { type: 'passphrase-prompt' }
+  if (walletsError) return { type: 'wallets-error', error: walletsError }
+  if (!key || keySyncInProgress || !walletSendReady) return { type: 'loading' }
+  if (showPassphrase && !justUnlocked) return { type: 'passphrase-setup' }
+  return { type: 'ready' }
+}
+
+export function WalletRouteGate ({ children, errorTitle, loadingMessage, walletsRequired = true }) {
   const { me } = useMe()
   const [justUnlocked, setJustUnlocked] = useState(false)
   const key = useKey()
@@ -55,9 +98,6 @@ export function WalletRouteGateShell ({ children, errorTitle, loadingMessage }) 
   const keySyncInProgress = useKeySyncInProgress()
   const walletSendReady = useWalletSendReady()
   const walletsError = useWalletsError()
-  const canRecoverReceiveOnlyPassphrase = keyError === WRONG_KEY &&
-    me?.privates?.showPassphrase &&
-    !me?.privates?.hasSendWallet
 
   useEffect(() => {
     setJustUnlocked(false)
@@ -69,62 +109,69 @@ export function WalletRouteGateShell ({ children, errorTitle, loadingMessage }) 
     }
   }, [me?.privates?.showPassphrase])
 
-  if (keyError === KEY_STORAGE_UNAVAILABLE) {
-    return <WalletKeyStorageUnavailableShell />
-  }
+  const state = walletRouteGateState({
+    walletsRequired,
+    key,
+    keyStorageUnavailable: keyError === KEY_STORAGE_UNAVAILABLE,
+    wrongKey: keyError === WRONG_KEY,
+    keySyncInProgress,
+    walletSendReady,
+    walletsError,
+    showPassphrase: me?.privates?.showPassphrase,
+    hasSendWallet: me?.privates?.hasSendWallet,
+    justUnlocked
+  })
 
-  if (canRecoverReceiveOnlyPassphrase && !walletsError && !walletSendReady) {
-    return <WalletLoadingShell message={loadingMessage} />
-  }
-
-  if (canRecoverReceiveOnlyPassphrase && walletSendReady) {
-    return (
-      <WalletCenteredPromptShell>
-        <WalletPassphraseSetup />
-      </WalletCenteredPromptShell>
-    )
-  }
-
-  if (keyError === WRONG_KEY) {
-    return (
-      <WalletCenteredPromptShell>
-        <WalletPassphrasePrompt showCancel={false} onSuccess={() => setJustUnlocked(true)} />
-      </WalletCenteredPromptShell>
-    )
-  }
-
-  if (walletsError) {
-    return (
-      <WalletErrorShell
-        title={errorTitle ?? 'failed to load wallets'}
-        message={walletsError.message ?? 'unknown error'}
-      />
-    )
-  }
-
-  if (!key || keySyncInProgress || !walletSendReady) {
-    return <WalletLoadingShell message={loadingMessage} />
-  }
-
-  if (me?.privates?.showPassphrase && !justUnlocked) {
-    return (
-      <WalletCenteredPromptShell>
-        <WalletPassphraseSetup />
-      </WalletCenteredPromptShell>
-    )
-  }
-
-  return children
+  return renderWalletRouteGateState(state, {
+    children,
+    errorTitle,
+    loadingMessage,
+    onPassphraseSuccess: () => setJustUnlocked(true)
+  })
 }
 
-export function WalletKeyStorageUnavailableShell () {
-  const insecureContext = typeof window !== 'undefined' && window.isSecureContext === false
-  return (
-    <WalletErrorShell
-      title='wallets unavailable'
-      message={insecureContext
-        ? 'wallets require a secure (HTTPS) connection on this device'
-        : 'this device does not support storage of cryptographic keys via IndexedDB'}
-    />
-  )
+function renderWalletRouteGateState (state, { children, errorTitle, loadingMessage, onPassphraseSuccess }) {
+  switch (state.type) {
+    case 'ready':
+      return children
+
+    case 'storage-unavailable': {
+      const insecureContext = typeof window !== 'undefined' && window.isSecureContext === false
+      return (
+        <WalletErrorShell
+          title='wallets unavailable'
+          message={insecureContext
+            ? 'wallets require a secure (HTTPS) connection on this device'
+            : 'this device does not support storage of cryptographic keys via IndexedDB'}
+        />
+      )
+    }
+
+    case 'loading':
+      return <WalletLoadingShell message={loadingMessage} />
+
+    case 'passphrase-setup':
+      return (
+        <CenteredPrompt>
+          <WalletPassphraseSetup />
+        </CenteredPrompt>
+      )
+
+    case 'passphrase-prompt':
+      return (
+        <CenteredPrompt>
+          <WalletPassphrasePrompt showCancel={false} onSuccess={onPassphraseSuccess} />
+        </CenteredPrompt>
+      )
+
+    case 'wallets-error':
+      return (
+        <WalletErrorShell
+          title={errorTitle ?? 'failed to load wallets'}
+          message={state.error.message ?? 'unknown error'}
+        />
+      )
+  }
 }
+
+export const WalletRouteGateShell = WalletRouteGate
