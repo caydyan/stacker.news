@@ -12,6 +12,7 @@ import styles from '@/components/dropdown.module.css'
 import ArrowDownIcon from '@/svgs/editor/toolbar/arrow-down.svg'
 import classNames from 'classnames'
 import { useRouter } from 'next/router'
+import { clearWalletBalanceCache } from '@/wallets/client/components/balance/cache'
 
 export default function LoginButton ({ text, type, className, onClick, disabled }) {
   let Icon, variant
@@ -86,7 +87,10 @@ export function LoginWithNymButton ({ className, callbackUrl, disabled }) {
             {accounts.map(account => (
               <Dropdown.Item
                 key={account.id}
-                onClick={() => setPointerCookie(account.id, cookieOptions({ httpOnly: false }))}
+                onClick={() => {
+                  clearWalletBalanceCache()
+                  setPointerCookie(account.id, cookieOptions({ httpOnly: false }))
+                }}
                 className={classNames(styles.dropdownExtraItem, Number(account.id) === Number(pointerCookie) && styles.active)}
               >
                 <span className={styles.dropdownExtraItemText}>{account.name}</span>

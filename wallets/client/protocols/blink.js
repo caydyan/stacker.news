@@ -1,4 +1,5 @@
 import { getScopes, SCOPE_READ, SCOPE_WRITE, getWallet, request } from '@/wallets/lib/protocols/blink'
+import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'BLINK'
 
@@ -18,6 +19,13 @@ export async function testSendPayment ({ apiKey, currency }, { signal }) {
 
   currency = currency ? currency.toUpperCase() : 'BTC'
   await getWallet({ apiKey, currency }, { signal })
+}
+
+export async function getBalance ({ apiKey, currency }, { signal } = {}) {
+  currency = currency ? currency.toUpperCase() : 'BTC'
+  const wallet = await getWallet({ apiKey, currency }, { signal })
+  // Blink returns wallet.balance in the minor unit for the selected wallet currency.
+  return satsBalance(wallet.balance, currency)
 }
 
 async function payInvoice (bolt11, { apiKey, wallet }, { signal }) {

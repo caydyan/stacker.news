@@ -1,5 +1,6 @@
 import { snFetch } from '@/lib/fetch'
 import { assertContentTypeJson, assertResponseOk } from '@/lib/url'
+import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'PHOENIXD'
 
@@ -31,6 +32,26 @@ export async function sendPayment (bolt11, { url, apiKey }, { signal }) {
   }
 
   return preimage
+}
+
+export async function getBalance ({ url, apiKey }, { signal } = {}) {
+  const headers = new Headers()
+  headers.set('Accept', 'application/json')
+  headers.set('Authorization', 'Basic ' + Buffer.from(':' + apiKey).toString('base64'))
+
+  const method = 'GET'
+  const res = await snFetch(url, {
+    path: '/getbalance',
+    method,
+    headers,
+    signal
+  })
+
+  assertResponseOk(res, { method })
+  assertContentTypeJson(res, { method })
+
+  const balance = await res.json()
+  return satsBalance(balance.balanceSat)
 }
 
 export async function testSendPayment (config, { signal }) {

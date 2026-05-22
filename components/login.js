@@ -13,6 +13,7 @@ import * as cookie from 'cookie'
 import { cookieOptions, MULTI_AUTH_ANON, MULTI_AUTH_POINTER } from '@/lib/auth'
 import Link from 'next/link'
 import useCookie from './use-cookie'
+import { clearWalletBalanceCache } from '@/wallets/client/components/balance/cache'
 
 export function EmailLoginForm ({ text, callbackUrl, multiAuth }) {
   const disabled = multiAuth
@@ -82,6 +83,7 @@ export default function Login ({ providers, callbackUrl, multiAuth, error, text,
   // for custom-domain signups, we first need to switch to anon.
   useEffect(() => {
     if (!signin && domainData) {
+      clearWalletBalanceCache()
       setPointerCookie(MULTI_AUTH_ANON, cookieOptions({ httpOnly: false }))
     }
   }, [signin, domainData, setPointerCookie])

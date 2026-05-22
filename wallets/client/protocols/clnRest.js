@@ -1,9 +1,16 @@
-import { sendPayment as clnSendPayment } from '@/lib/cln'
+import { getBalance as clnGetBalance, runeMayAllowMethod, sendPayment as clnSendPayment } from '@/lib/cln'
+import { msatsBalance } from '@/wallets/lib/balance'
 
 export const name = 'CLN_REST'
 
 export const sendPayment = async (bolt11, config, { signal }) => {
   return await clnSendPayment(bolt11, config, { signal })
+}
+
+export const getBalance = async (config, { signal } = {}) => {
+  if (!runeMayAllowMethod(config.rune, 'listfunds')) return null
+
+  return msatsBalance(await clnGetBalance(config, { signal }))
 }
 
 export const testSendPayment = async ({ socket, rune, cert }, { signal }) => {

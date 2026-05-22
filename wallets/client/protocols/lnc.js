@@ -1,9 +1,14 @@
 import { Mutex } from 'async-mutex'
+import { msatsToSats } from '@/lib/format'
+import { satsBalance } from '@/wallets/lib/balance'
 
 export const name = 'LNC'
 
 const mutex = new Mutex()
 const serverHost = 'mailbox.terminal.lightning.today:443'
+const LNC_SEND_PAYMENT_PERMISSION = 'lnrpc.Lightning.SendPaymentSync'
+const LNC_CHANNEL_BALANCE_PERMISSION = 'lnrpc.Lightning.ChannelBalance'
+const LNC_SEND_COINS_PERMISSION = 'lnrpc.Lightning.SendCoins'
 
 export async function sendPayment (bolt11, credentials, { logger }) {
   return await mutex.runExclusive(async () => {
@@ -21,6 +26,16 @@ export async function testSendPayment (credentials, { logger }) {
   await validateNarrowPerms(lnc)
   logger?.info('permissions ok')
   return lnc.credentials.credentials
+}
+
+export async function getBalance (credentials, { logger } = {}) {
+  return await mutex.runExclusive(async () => {
+    const lnc = await getLNC(credentials, { logger })
+    if (!lnc.hasPerms(LNC_CHANNEL_BALANCE_PERMISSION)) return null
+
+    const balance = await lnc.lnd.lightning.channelBalance()
+    return satsBalance(lndAmountToSats(balance.localBalance ?? balance.local_balance ?? balance.balance))
+  })
 }
 
 async function disconnectLNC (lnc, { logger } = {}) {
@@ -100,11 +115,11 @@ async function getLNC (credentials = {}, { logger } = {}) {
 }
 
 function validateNarrowPerms (lnc) {
-  if (!lnc.hasPerms('lnrpc.Lightning.SendPaymentSync')) {
-    throw new Error('missing permission: lnrpc.Lightning.SendPaymentSync')
+  if (!lnc.hasPerms(LNC_SEND_PAYMENT_PERMISSION)) {
+    throw new Error(`missing permission: ${LNC_SEND_PAYMENT_PERMISSION}`)
   }
-  if (lnc.hasPerms('lnrpc.Lightning.SendCoins')) {
-    throw new Error('too broad permission: lnrpc.Wallet.SendCoins')
+  if (lnc.hasPerms(LNC_SEND_COINS_PERMISSION)) {
+    throw new Error(`too broad permission: ${LNC_SEND_COINS_PERMISSION}`)
   }
   // TODO: need to check for more narrow permissions
   // blocked by https://github.com/lightninglabs/lnc-web/issues/112
@@ -168,4 +183,16 @@ class LncCredentialStore {
   clear () {
     this.credentials = {}
   }
+}
+
+function lndAmountToSats (amount) {
+  if (amount?.sat != null) return lndAmountToSats(amount.sat)
+  if (amount?.msat != null) {
+    try {
+      return msatsToSats(amount.msat)
+    } catch {
+      return null
+    }
+  }
+  return amount
 }

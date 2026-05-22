@@ -8,10 +8,12 @@ import Link from 'next/link'
 import AddIcon from '@/svgs/add-fill.svg'
 import { cookieOptions, MULTI_AUTH_ANON, MULTI_AUTH_LIST, MULTI_AUTH_POINTER } from '@/lib/auth'
 import { useDomain } from '@/components/territory-domains'
+import { clearWalletBalanceCache } from '@/wallets/client/components/balance/cache'
 
 const b64Decode = str => Buffer.from(str, 'base64').toString('utf-8')
 
 export const nextAccount = async () => {
+  clearWalletBalanceCache()
   const { status } = await fetch('/api/next-account', { method: 'POST', credentials: 'include' })
   // if status is 302, this means the server was able to switch us to the next available account
   return status === 302
@@ -74,6 +76,7 @@ const AccountListRow = ({ account, selected, ...props }) => {
     // update pointer cookie
     const options = cookieOptions({ httpOnly: false })
     const anon = account.id === USER_ID.anon
+    clearWalletBalanceCache()
     setPointerCookie(anon ? MULTI_AUTH_ANON : account.id, options)
 
     // reload whatever page we're on to avoid any bugs due to missing authorization etc.

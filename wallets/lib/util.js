@@ -2,6 +2,7 @@ import * as yup from 'yup'
 import wallets from '@/wallets/lib/wallets.json'
 import protocols from '@/wallets/lib/protocols'
 import { SSR } from '@/lib/constants'
+export { satsBalance, msatsBalance } from './balance'
 
 function walletJson (name) {
   return wallets.find(wallet => wallet.name === name)
@@ -102,6 +103,18 @@ export function protocolAvailable ({ name, send }) {
   }
 
   return true
+}
+
+export function orderedSendProtocols (wallet) {
+  const configuredSendProtocols = wallet.protocols.filter(protocol => protocol.send && protocol.enabled)
+  const configuredByName = new Map(configuredSendProtocols.map(protocol => [protocol.name, protocol]))
+  const templateOrderedProtocols = (wallet.template?.protocols || [])
+    .filter(protocol => protocol.send)
+    .map(protocol => configuredByName.get(protocol.name))
+    .filter(Boolean)
+  const remainingProtocols = configuredSendProtocols
+    .filter(protocol => !templateOrderedProtocols.some(ordered => ordered.id === protocol.id))
+  return [...templateOrderedProtocols, ...remainingProtocols]
 }
 
 export function isEncryptedField (protocol, key) {

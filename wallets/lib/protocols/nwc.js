@@ -2,6 +2,15 @@ import Nostr from '@/lib/nostr'
 import { NDKNWCWallet } from '@nostr-dev-kit/ndk-wallet'
 import { nwcUrlValidator, parseNwcUrl } from '@/wallets/lib/validate'
 
+// Some NWC services (notably Alby Hub) extend the NIP-47 `get_balance` response
+// with a non-standard `max_amount` field that uses 2^64-1 (uint64 max) as the
+// "no cap" sentinel. NIP-47 itself only specifies `{ balance }`:
+// https://github.com/nostr-protocol/nips/blob/master/47.md#get_balance
+// We treat 2^64-1 as "unknown/no limit" for any msat field we read.
+const UINT64_MAX_MSATS = 18446744073709551615n
+export const NWC_PAY_INVOICE_METHOD = 'pay_invoice'
+export const NWC_GET_BALANCE_METHOD = 'get_balance'
+
 // Nostr Wallet Connect (NIP-47)
 // https://github.com/nostr-protocol/nips/blob/master/47.md
 
@@ -17,6 +26,10 @@ export default [
         label: 'url',
         placeholder: 'nostr+walletconnect://',
         type: 'password',
+        help: [
+          'The connection must allow `pay_invoice` to send payments.',
+          'Allow `get_balance` too if you want Stacker News to show this wallet balance.'
+        ],
         required: true,
         validate: nwcUrlValidator(),
         encrypt: true
@@ -48,7 +61,7 @@ export async function nwcTryRun (fun, { url }, { signal }) {
   try {
     const nwc = await getNwc(nostr, url, { signal })
     const res = await fun(nwc)
-    if (res.error) throw new Error(res.error)
+    if (res?.error) throw new Error(res.error)
     return res
   } catch (e) {
     if (e.error) throw new Error(e.error.message || e.error.code)
@@ -71,5 +84,50 @@ export async function getNwc (nostr, url, { signal }) {
 
 export async function supportedMethods (url, { signal }) {
   const result = await nwcTryRun(nwc => nwc.getInfo(), { url }, { signal })
-  return result.methods
+  return nwcSupportedMethods(result)
+}
+
+export async function getBalance (url, { signal } = {}) {
+  return await nwcTryRun(async nwc => {
+    const methods = nwcSupportedMethods(await nwc.getInfo())
+    if (!methods.includes(NWC_GET_BALANCE_METHOD)) return null
+
+    const response = await nwc.req('get_balance', {})
+    if (response.error) {
+      throw new Error(response.error.message || response.error.code)
+    }
+
+    const balance = response.result?.balance
+    if (balance == null) return null
+
+    const balanceSats = nwcMsatsToSats(balance)
+    if (balanceSats == null) return null
+
+    const maxAmount = response.result?.max_amount ?? response.result?.maxAmount
+    if (maxAmount != null) {
+      const maxAmountSats = nwcMsatsToSats(maxAmount)
+      if (maxAmountSats != null) return Math.min(balanceSats, maxAmountSats)
+    }
+
+    return balanceSats
+  }, { url }, { signal })
+}
+
+function nwcMsatsToSats (msats) {
+  const amount = nwcAmountToBigInt(msats)
+  if (amount == null || amount === UINT64_MAX_MSATS) return null
+  return Number(amount / 1000n)
+}
+
+function nwcAmountToBigInt (amount) {
+  if (typeof amount === 'bigint') return amount
+  if (typeof amount === 'string' && /^\d+$/.test(amount)) return BigInt(amount)
+  if (typeof amount === 'number' && Number.isSafeInteger(amount) && amount >= 0) return BigInt(amount)
+  return null
+}
+
+function nwcSupportedMethods (info) {
+  if (Array.isArray(info?.methods)) return info.methods
+  if (typeof info?.methods === 'string') return info.methods.split(/\s+/).filter(Boolean)
+  return []
 }
