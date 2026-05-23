@@ -15,6 +15,8 @@ import { MaxFeeField } from './max-fee-field'
 import { sendAmountText } from './amount-text'
 import { useSendSubmit } from './send-submit'
 import { sendFormSchema } from './schema'
+import Thunderstorm from '@/components/thunderstorm'
+import { useAnimationEnabled } from '@/components/animation'
 import BackArrow from '@/svgs/arrow-left-line.svg'
 const styles = { ...sharedStyles, ...actionStyles }
 
@@ -23,6 +25,7 @@ const MAX_FEE = 10
 export function SendForm ({ source, wallet, protocol, availableSats }) {
   const [sent, setSent] = useState(null)
   const [sendError, setSendError] = useState(null)
+  const [animationEnabled] = useAnimationEnabled()
   const rewardSats = source === 'reward-sats'
   const { destinationType, loadingLnAddrOptions, lnAddrOptions, lnAddrError, loadDestinationOptions, onDestinationChange } = usePaymentTargetOptions()
   // reward-sats is a custodial path that hard-caps fees server-side. External
@@ -67,6 +70,7 @@ export function SendForm ({ source, wallet, protocol, availableSats }) {
   if (sent && wallet) {
     return (
       <div className={`d-flex flex-column flex-fill ${styles.walletActionSuccess}`}>
+        {animationEnabled && <Thunderstorm intensity='extreme' fog='light' duration={2500} />}
         <div className={classNames(styles.walletSentBlock, 'd-flex flex-column align-items-center mw-100')}>
           <div className={classNames(styles.walletSentSummary, 'd-flex flex-column align-items-center mw-100')}>
             <div className={classNames(styles.walletSentLabel, 'text-muted')}>sent</div>
