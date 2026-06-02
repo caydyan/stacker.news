@@ -26,14 +26,14 @@ const XXX_CLTV_DELTA_BUFFER_FOR_LN_SERVICE_BUG = 46 // the buffer to add for the
   }
   @returns bolt11 {string} the wrapped incoming invoice
 */
-export async function wrapBolt11 ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description }) {
-  const wrapped = await wrapBolt11Params({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description })
+export async function wrapBolt11 ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description, descriptionHash }) {
+  const wrapped = await wrapBolt11Params({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description, descriptionHash })
   return (await createHodlInvoice({ lnd, ...wrapped })).request
 }
 
-export async function canWrapBolt11 ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description }) {
+export async function canWrapBolt11 ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description, descriptionHash }) {
   try {
-    await wrapBolt11Params({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description })
+    await wrapBolt11Params({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description, descriptionHash })
   } catch {
     return false
   }
@@ -41,7 +41,7 @@ export async function canWrapBolt11 ({ msats, bolt11, maxRoutingFeeMsats, hideIn
   return true
 }
 
-async function wrapBolt11Params ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description }) {
+async function wrapBolt11Params ({ msats, bolt11, maxRoutingFeeMsats, hideInvoiceDesc, description, descriptionHash }) {
   try {
     console.group('wrapInvoice', description, 'msats', msats, 'maxRoutingFeeMsats', maxRoutingFeeMsats)
 
@@ -123,7 +123,11 @@ async function wrapBolt11Params ({ msats, bolt11, maxRoutingFeeMsats, hideInvoic
     }
 
     // validate the description
-    if (inv.description_hash) {
+    if (descriptionHash) {
+      // The wrapped invoice is payer-facing, so LNURL metadata hashes come
+      // from the callback context, not the downstream wallet invoice.
+      wrapped.description_hash = descriptionHash
+    } else if (inv.description_hash) {
       // use the invoice description hash in case this is an lnurlp invoice
       wrapped.description_hash = inv.description_hash
     } else if (description && !hideInvoiceDesc) {
