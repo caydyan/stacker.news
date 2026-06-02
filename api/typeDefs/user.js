@@ -49,7 +49,6 @@ export default gql`
     toggleMute(id: ID): User
     generateApiKey(id: ID!): String
     deleteApiKey(id: ID!): User
-    setDiagnostics(diagnostics: Boolean!): Boolean
   }
 
   type User {
