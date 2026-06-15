@@ -32,6 +32,7 @@ import pay, { retry as retryPayIn } from '../payIn'
 import { BOUNTY_ALREADY_PAID_ERROR, BOUNTY_IN_PROGRESS_ERROR, getBountyPaymentTail } from '../payIn/lib/bountyPayment'
 import { lexicalHTMLGenerator } from '@/lib/lexical/server/html'
 import { resolveItemComments } from './comment-tree'
+import { orderByClause } from './item-order'
 
 export async function getItem (parent, { id }, { me, models }) {
   const [item] = await getItemsById([id], { me, models })
@@ -57,19 +58,6 @@ export async function getItemsById (ids, { me, models }) {
   })
 
   return items.map(({ rank, ...item }) => item)
-}
-
-const orderByClause = (by, me, models, type, sub) => {
-  switch (by) {
-    case 'comments':
-      return 'ORDER BY "Item".ncomments DESC'
-    case 'sats':
-      return 'ORDER BY "Item".ranktop DESC, "Item".id DESC'
-    case 'downsats':
-      return 'ORDER BY "Item"."downMsats" DESC'
-    default:
-      return `ORDER BY ${type === 'bookmarks' ? '"bookmarkCreatedAt"' : '"Item".created_at'} DESC`
-  }
 }
 
 // this grabs all the stuff we need to display the item list and only
@@ -431,10 +419,10 @@ export default {
                 typeClause(type),
                 by === 'downsats' && '"Item"."downMsats" > 0',
                 whenClause(when || 'forever', table))}
-              ${orderByClause(by, me, models, type)}
+              ${orderByClause(by, me, models, type, undefined, sort)}
               OFFSET $4
               LIMIT $5`,
-            orderBy: orderByClause(by, me, models, type)
+            orderBy: orderByClause(by, me, models, type, undefined, sort)
           }, ...whenRange(when, from, to || decodedCursor.time), user.id, decodedCursor.offset, limit)
           break
         case 'new':
